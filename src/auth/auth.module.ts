@@ -18,7 +18,7 @@ import { AuthProvider } from './entitiy/auth-provider.entity';
     PassportModule,
     JwtModule.register({
       secret: jwtConstants.secret,
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '1h' },
     }),
     TypeOrmModule.forFeature([Auth, AuthProvider]),
     UsersModule,
