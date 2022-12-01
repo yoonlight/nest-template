@@ -1,22 +1,15 @@
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Auth } from 'src/auth/entitiy/auth.entity';
+import { CommonEntity } from 'src/common/common.entitiy';
+import { Entity, Column, OneToMany } from 'typeorm';
 
 @Entity()
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number;
-
-  @Column()
-  firstName: string;
-
-  @Column()
-  lastName: string;
-
+export class User extends CommonEntity {
   @Column()
   username: string;
 
-  @Column()
-  password: string;
+  @Column({ default: null })
+  password?: string;
 
-  @Column({ default: true })
-  isActive: boolean;
+  @OneToMany(() => Auth, (auth) => auth.user)
+  auth: Auth[];
 }
