@@ -1,27 +1,65 @@
 import { Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Auth } from './entitiy/auth.entity';
+import { Repository } from 'typeorm';
+import { AuthProvider } from './entitiy/auth-provider.entity';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    @InjectRepository(Auth)
+    private readonly authRepo: Repository<Auth>,
+    @InjectRepository(AuthProvider)
+    private readonly authProviderRepo: Repository<AuthProvider>,
   ) {}
 
   async validateUser(username: string, pass: string): Promise<any> {
     const user = await this.usersService.findUser(username);
     if (user && user.password === pass) {
-      const { password, ...result } = user;
-      return result;
+      const { username, id } = user;
+      return { username, id };
     }
     return null;
   }
 
-  async login(user: any) {
-    const payload = { username: user.username, sub: user.userId };
+  async login(userId: number, email: string) {
+    const payload = { email, userId };
     return {
-      access_token: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(payload),
     };
+  }
+
+  async validateUid(uid: string) {
+    const auth = await this.authRepo.findOne({
+      where: { uid },
+      relations: ['user'],
+    });
+    return auth.user.id;
+  }
+
+  findUid(uid: string) {
+    return this.authRepo.findOne({ where: { uid } });
+  }
+
+  async createAuth(
+    user: User,
+    uid: string,
+    email: string,
+    authProviderName: string,
+  ) {
+    const authProvider = await this.authProviderRepo.findOne({
+      where: { name: authProviderName },
+    });
+    const auth = new Auth();
+    auth.email = email;
+    auth.uid = uid;
+    auth.authProvier = authProvider;
+    auth.user = user;
+    this.authRepo.insert(auth);
   }
 }

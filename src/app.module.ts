@@ -6,9 +6,11 @@ import { EjsAdapter } from '@nestjs-modules/mailer/dist/adapters/ejs.adapter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
-import { User } from './users/entities/user.entity';
 import { AuthModule } from './auth/auth.module';
 import { EmailService } from './email/email.service';
+import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import { FirebaseAdminModule } from '@tfarras/nestjs-firebase-admin';
+import * as admin from 'firebase-admin';
 
 @Module({
   imports: [
@@ -23,8 +25,9 @@ import { EmailService } from './email/email.service';
         username: configService.get('DB_USER'),
         password: configService.get('DB_PASS'),
         database: configService.get('DB_NAME'),
-        entities: [User],
+        autoLoadEntities: true,
         synchronize: true,
+        namingStrategy: new SnakeNamingStrategy(),
       }),
     }),
     MailerModule.forRootAsync({
@@ -42,6 +45,11 @@ import { EmailService } from './email/email.service';
             strict: true,
           },
         },
+      }),
+    }),
+    FirebaseAdminModule.forRootAsync({
+      useFactory: () => ({
+        credential: admin.credential.applicationDefault(),
       }),
     }),
     UsersModule,
