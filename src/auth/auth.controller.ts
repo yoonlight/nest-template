@@ -41,7 +41,8 @@ export class AuthController {
   @Get('uid/:uid')
   async checkIsRegistered(@Param('uid') uid: string) {
     const auth = await this.authService.findUid(uid);
-    return auth.uid;
+    if (auth) return true;
+    return false;
   }
 
   @Post('login/kakao')
