@@ -62,4 +62,20 @@ export class AuthService {
     auth.user = user;
     this.authRepo.insert(auth);
   }
+
+  async findKakaoProfile(accessToken: string): Promise<{
+    sub: string;
+    nickname: string;
+    email: string;
+    email_verified: boolean;
+  }> {
+    return fetch('https://kapi.kakao.com/v1/oidc/userinfo', {
+      // return fetch('https://kapi.kakao.com/v2/user/me', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+      },
+    }).then((res) => res.json());
+  }
 }
