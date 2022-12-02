@@ -10,6 +10,7 @@ import {
 import { RegisterDto } from './dto/register.dto';
 import { UsersService } from 'src/users/users.service';
 import { FirebaseUser } from '@tfarras/nestjs-firebase-auth';
+import { LoginTokenDto } from './dto/login-token.dto';
 
 @ApiBearerAuth()
 @Controller('auth')
@@ -26,8 +27,8 @@ export class AuthController {
   async login(@Request() req) {
     const user: FirebaseUser = req.user;
     const { uid, email } = user;
-    const userId = await this.authService.validateUid(uid);
-    return this.authService.login(userId, email);
+    const auth = await this.authService.findUid(uid);
+    return this.authService.login(auth.user.id, email);
   }
 
   @Post('register')
@@ -41,5 +42,23 @@ export class AuthController {
   async checkIsRegistered(@Param('uid') uid: string) {
     const auth = await this.authService.findUid(uid);
     return auth.uid;
+  }
+
+  @Post('login/kakao')
+  async loginKakao(@Body() dto: LoginTokenDto) {
+    const res = await this.authService.findKakaoProfile(dto.token);
+    const auth = await this.authService.findUid(res.sub);
+    if (!auth) {
+      const user = await this.usersService.create(res.nickname);
+      await this.authService.createAuth(
+        user,
+        res.sub,
+        res.email,
+        'kakao',
+        res.email_verified,
+      );
+      return this.authService.login(user.id, res.email);
+    }
+    return this.authService.login(auth.user.id, res.email);
   }
 }

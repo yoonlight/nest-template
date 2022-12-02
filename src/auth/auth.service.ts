@@ -34,16 +34,8 @@ export class AuthService {
     };
   }
 
-  async validateUid(uid: string) {
-    const auth = await this.authRepo.findOne({
-      where: { uid },
-      relations: ['user'],
-    });
-    return auth.user.id;
-  }
-
   findUid(uid: string) {
-    return this.authRepo.findOne({ where: { uid } });
+    return this.authRepo.findOne({ where: { uid }, relations: ['user'] });
   }
 
   async createAuth(
@@ -51,6 +43,7 @@ export class AuthService {
     uid: string,
     email: string,
     authProviderName: string,
+    emailVerified?: boolean,
   ) {
     const authProvider = await this.authProviderRepo.findOne({
       where: { name: authProviderName },
@@ -60,6 +53,23 @@ export class AuthService {
     auth.uid = uid;
     auth.authProvier = authProvider;
     auth.user = user;
+    if (emailVerified) auth.emailVerified = emailVerified;
     this.authRepo.insert(auth);
+  }
+
+  async findKakaoProfile(accessToken: string): Promise<{
+    sub: string;
+    nickname: string;
+    email: string;
+    email_verified: boolean;
+  }> {
+    return fetch('https://kapi.kakao.com/v1/oidc/userinfo', {
+      // return fetch('https://kapi.kakao.com/v2/user/me', {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+      },
+    }).then((res) => res.json());
   }
 }
